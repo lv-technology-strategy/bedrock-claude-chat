@@ -30,7 +30,7 @@ const waf = new FrontendWafStack(app, `FrontendWafStack`, {
 
 new BedrockChatStack(app, `BedrockChatStack`, {
   env: {
-    region: process.env.CDK_DEFAULT_REGION,
+    region: "us-east-1",
   },
   crossRegionReferences: true,
   bedrockRegion: BEDROCK_REGION,
