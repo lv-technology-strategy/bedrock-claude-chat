@@ -1,9 +1,7 @@
 # Bedrock Claude Chat
 
-![](https://github.com/aws-samples/bedrock-claude-chat/actions/workflows/test.yml/badge.svg)
-
 > [!Tip]
-> 🔔**API 公開/管理ダッシュボードの機能がリリースされました。** 詳細は[Release](https://github.com/aws-samples/bedrock-claude-chat/releases/tag/v0.4.5)をご確認ください。
+> 🔔**Claude3 Opus をサポートしました。** 2024/04/17 現在、Bedrock は`us-west-2`のみサポートしています。このリポジトリでは Bedrock はデフォルトで`us-east-1`リージョンを利用します。このため、ご利用される場合はデプロイ前に`bedrockRegion`の値を変更してください。詳細は[こちら](#deploy-using-cdk)
 
 > [!Warning]
 > 現在のバージョン(v0.4.x)は、DynamoDB テーブルスキーマの変更のため、過去バージョン(~v0.3.0)とは互換性がありません。**以前のバージョンから v0.4.x へアップデートすると、既存の対話記録は全て破棄されますので注意が必要です。**
@@ -12,12 +10,12 @@
 
 ### 基本的な会話
 
-[Claude 3](https://www.anthropic.com/news/claude-3-family)によるテキストと画像の両方を利用したチャットが可能です。現在`Haiku`および`Sonnet`をサポートしています。
+[Claude 3](https://www.anthropic.com/news/claude-3-family)によるテキストと画像の両方を利用したチャットが可能です。現在`Haiku`および`Sonnet`、または`Opus`をサポートしています。
 ![](./imgs/demo_ja.gif)
 
 ### ボットのカスタマイズ
 
-外部のナレッジおよび具体的なインストラクションを組み合わせ、ボットをカスタマイズすることが可能です（外部のナレッジを利用した方法は[RAG](./RAG_ja.md)として知られています）。なお、作成したボットはアプリケーションのユーザー間で共有することができます。カスタマイズされたボットはスタンドアロンの API として公開できます (詳細は[こちら](./docs/PUBLISH_API.md)をご覧ください)。
+外部のナレッジおよび具体的なインストラクションを組み合わせ、ボットをカスタマイズすることが可能です（外部のナレッジを利用した方法は[RAG](./RAG_ja.md)として知られています）。なお、作成したボットはアプリケーションのユーザー間で共有することができます。カスタマイズされたボットはスタンドアロンの API として公開できます (詳細は[こちら](./PUBLISH_API.md)をご覧ください)。
 
 ![](./imgs/bot_creation_ja.png)
 ![](./imgs/bot_chat_ja.png)
@@ -25,13 +23,13 @@
 
 ### 管理者ダッシュボード
 
-管理者ダッシュボードで各ユーザー/ボットの使用状況を分析できます。[詳細](./docs/ADMINISTRATOR.md)
+管理者ダッシュボードで各ユーザー/ボットの使用状況を分析できます。[詳細](./ADMINISTRATOR.md)
 
 ![](./imgs/admin_bot_analytics.png)
 
 ## 🚀 まずはお試し
 
-- us-east-1 リージョンにて、[Bedrock Model access](https://us-east-1.console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess) > `Manage model access` > `Anthropic / Claude 3 Haiku`, `Anthropic / Claude 3 Sonnet`, `Cohere / Embed Multilingual`をチェックし、`Save changes`をクリックします
+- us-east-1 リージョンにて、[Bedrock Model access](https://us-east-1.console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess) > `Manage model access` > `Anthropic / Claude 3 Haiku`, `Anthropic / Claude 3 Sonnet` `Cohere / Embed Multilingual`をチェックし、`Save changes`をクリックします
 
 <details>
 <summary>スクリーンショット</summary>
@@ -40,7 +38,7 @@
 
 </details>
 
-- [CloudShell](https://console.aws.amazon.com/cloudshell/home)をデプロイしたいリージョン (ap-northeast-1など) で開きます
+- [CloudShell](https://console.aws.amazon.com/cloudshell/home)をデプロイしたいリージョン (ap-northeast-1 など) で開きます
 
 - 下記のコマンドでデプロイ実行します
 
@@ -188,7 +186,19 @@ BedrockChatStack.FrontendURL = https://xxxxx.cloudfront.net
 
 ## その他
 
-### テキスト生成パラメータ・ベクトル埋め込みパラメータの設定
+### Mistral を利用する
+
+cdk.json 内の`enableMistral`を`true`に更新し、`cdk deploy`を実行します。
+
+```json
+...
+  "enableMistral": true,
+```
+
+> [!Important]
+> このプロジェクトは Anthropic の Claude モデルを中心としており、Mistral モデルはサポートが限定的です。例えば、プロンプトの例は Claude モデルを基準としています。これは Mistral モデル専用のオプションです。一度 Mistral モデルを有効にすると、すべてのチャット機能で Mistral モデルのみを使用できます。Claude モデルと Mistral モデルの両方を使用することはできません。
+
+### テキスト生成パラメータの設定
 
 [config.py](../backend/app/config.py)を編集後、`cdk deploy`を実行してください。
 
@@ -200,17 +210,43 @@ GENERATION_CONFIG = {
     "top_p": 0.999,
     "stop_sequences": ["Human: ", "Assistant: "],
 }
+```
 
-EMBEDDING_CONFIG = {
-    "model_id": "amazon.titan-embed-text-v1",
-    "chunk_size": 1000,
-    "chunk_overlap": 100,
-}
+### サインアップ可能なメールアドレスのドメインを制限
+
+このサンプルはデフォルトではサインアップ可能なメールアドレスのドメインに制限がありません。特定のドメインのみに限定してサインアップを可能にするには、 `cdk.json` を開き、`allowedSignUpEmailDomains` にリスト形式でドメインを指定してください。
+
+```
+"allowedSignUpEmailDomains": ["example.com"],
 ```
 
 ### リソースの削除
 
 cli および CDK を利用されている場合、`cdk destroy`を実行してください。そうでない場合は[CloudFormation](https://console.aws.amazon.com/cloudformation/home)へアクセスし、手動で`BedrockChatStack`および`FrontendWafStack`を削除してください。なお`FrontendWafStack`は `us-east-1` リージョンにあります。
+
+### RAG 用ベクトル DB の停止
+
+[cdk.json](../cdk/cdk.json) を以下のように CRON 形式で設定することで、[VectorStore コンストラクト](../cdk/lib/constructs/vectorstore.ts)で作成される Aurora Serverless リソースを停止・再起動できます。この設定を適用することで運用コストの削減が見込めます。なお、デフォルト設定で Aurora Serverless は常時起動状態になっています。なお UTC で実行される点に留意ください。
+
+```json
+...
+"rdbSchedules": {
+  "stop": {
+    "minute": "50",
+    "hour": "10",
+    "day": "*",
+    "month": "*",
+    "year": "*"
+  },
+  "start": {
+    "minute": "40",
+    "hour": "2",
+    "day": "*",
+    "month": "*",
+    "year": "*"
+  }
+}
+```
 
 ### 言語設定について
 
@@ -220,7 +256,7 @@ cli および CDK を利用されている場合、`cdk destroy`を実行して�
 
 ### セルフサインアップを無効化する
 
-このサンプルはデフォルトでセルフサインアップが有効化してあります。セルフサインアップを無効にするには、[auth.ts](./cdk/lib/constructs/auth.ts)を開き、`selfSignUpEnabled` を `false` に切り替えてから再デプロイしてください。
+このサンプルはデフォルトでセルフサインアップが有効化してあります。セルフサインアップを無効にするには、[auth.ts](./cdk/lib/constructs/auth.ts)を開き、`selfSignUpEnabled` を `false` に変更してから再デプロイしてください。
 
 ```ts
 const userPool = new UserPool(this, "UserPool", {
@@ -230,7 +266,7 @@ const userPool = new UserPool(this, "UserPool", {
     requireDigits: true,
     minLength: 8,
   },
-  // true -> false
+  // Set to false
   selfSignUpEnabled: false,
   signInAliases: {
     username: false,
@@ -241,7 +277,7 @@ const userPool = new UserPool(this, "UserPool", {
 
 ### 外部のアイデンティティプロバイダー
 
-このサンプルは外部のアイデンティティプロバイダーをサポートしています。現在、Google のみをサポートしています。設定するには、[こちら](./SET_UP_IDP_ja.md)をご覧ください。
+このサンプルは外部のアイデンティティプロバイダーをサポートしています。現在、[Google](./idp/SET_UP_GOOGLE_ja.md)および[カスタム OIDC プロバイダー](./idp/SET_UP_CUSTOM_OIDC.md)をサポートしています。
 
 ### ローカルでの開発について
 
@@ -249,7 +285,13 @@ const userPool = new UserPool(this, "UserPool", {
 
 ### Pull Request
 
-バグ修正や機能追加など、Pull Request は大変ありがたく思っています。下記をご参考にしていただけますと幸いです。
+コントリビュートを検討していただきありがとうございます！バグ修正、言語翻訳（i18n）、機能拡張、その他の改善を歓迎しています。
+
+機能拡張やその他の改善については、**プルリクエストを作成する前に、実装方法や詳細について議論するために、Feature Request Issue を作成いただくようお願いいたします。**
+
+バグ修正については、直接プルリクエストを作成してください。
+
+コントリビュートする前に、以下のガイドラインもご確認ください。
 
 - [ローカル環境での開発](./LOCAL_DEVELOPMENT_ja.md)
 - [CONTRIBUTING](../CONTRIBUTING.md)
